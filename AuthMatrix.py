@@ -142,9 +142,11 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         def addPopup(component, popup):
             class genericMouseListener(MouseAdapter):
                 def mousePressed(self, e):
+                    print("mousePressed")
                     if e.isPopupTrigger():
                         self.showMenu(e)
                 def mouseReleased(self, e):
+                    print("mouseReleased")
                     if e.isPopupTrigger():
                         self.showMenu(e)
                 def showMenu(self, e):
@@ -563,25 +565,28 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
 
         
 
+        class AddRequestActionListener(ActionListener):
+            def __init__(self, extender):
+                self.extender = extender
 
-        def addRequestsToTab(e):
-            for messageInfo in messages:
-                requestInfo = self._helpers.analyzeRequest(messageInfo)
-                name = str(requestInfo.getMethod()).ljust(8) + requestInfo.getUrl().getPath()
-                # Grab regex from response
-                regex = "^HTTP/1\\.1 200 OK"
-                response = messageInfo.getResponse()
-                if response:
-                    responseInfo=self._helpers.analyzeResponse(response)
-                    if len(responseInfo.getHeaders()):
-                        responseCodeHeader = responseInfo.getHeaders()[0]
-                        regex = "^"+re.escape(responseCodeHeader)
-                # Must create a new RequestResponseStored object since modifying the original messageInfo
-                # from its source (such as Repeater) changes this saved object. MessageInfo is a reference, not a copy
-                messageIndex = self._db.createNewMessage(RequestResponseStored(self,requestResponse=messageInfo), name, regex)
-            self._messageTable.redrawTable()
-            self._chainTable.redrawTable()
-            self.highlightTab()
+            def actionPerformed(self, e):
+                for messageInfo in messages:
+                    requestInfo = self.extender._helpers.analyzeRequest(messageInfo)
+                    name = str(requestInfo.getMethod()).ljust(8) + requestInfo.getUrl().getPath()
+                    # Grab regex from response
+                    regex = "^HTTP/1\\.1 200 OK"
+                    response = messageInfo.getResponse()
+                    if response:
+                        responseInfo=self.extender._helpers.analyzeResponse(response)
+                        if len(responseInfo.getHeaders()):
+                            responseCodeHeader = responseInfo.getHeaders()[0]
+                            regex = "^"+re.escape(responseCodeHeader)
+                    # Must create a new RequestResponseStored object since modifying the original messageInfo
+                    # from its source (such as Repeater) changes this saved object. MessageInfo is a reference, not a copy
+                    messageIndex = self.extender._db.createNewMessage(RequestResponseStored(self,requestResponse=messageInfo), name, regex)
+                self.extender._messageTable.redrawTable()
+                self.extender._chainTable.redrawTable()
+                self.extender.highlightTab()
 
 
         class UserCookiesActionListener(ActionListener):
@@ -590,6 +595,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                 self.extender = extender
 
             def actionPerformed(self, e):
+                print('UserCookiesActionListener.actionPerformed')
                 for messageInfo in messages:
                     cookieVal = ""
                     requestInfo = self.extender._helpers.analyzeRequest(messageInfo)
@@ -623,7 +629,8 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
 
         if valid:
             menuItem = JMenuItem("Send request(s) to AuthMatrix");
-            menuItem.addActionListener(addRequestsToTab)
+            menuItem.addActionListener(AddRequestActionListener(self))
+
             ret.append(menuItem)
 
             if len(messages)==1:
