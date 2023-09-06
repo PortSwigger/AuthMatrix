@@ -142,11 +142,9 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         def addPopup(component, popup):
             class genericMouseListener(MouseAdapter):
                 def mousePressed(self, e):
-                    print("mousePressed")
                     if e.isPopupTrigger():
                         self.showMenu(e)
                 def mouseReleased(self, e):
-                    print("mouseReleased")
                     if e.isPopupTrigger():
                         self.showMenu(e)
                 def showMenu(self, e):
@@ -583,7 +581,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                             regex = "^"+re.escape(responseCodeHeader)
                     # Must create a new RequestResponseStored object since modifying the original messageInfo
                     # from its source (such as Repeater) changes this saved object. MessageInfo is a reference, not a copy
-                    messageIndex = self.extender._db.createNewMessage(RequestResponseStored(self,requestResponse=messageInfo), name, regex)
+                    messageIndex = self.extender._db.createNewMessage(RequestResponseStored(self.extender,requestResponse=messageInfo), name, regex)
                 self.extender._messageTable.redrawTable()
                 self.extender._chainTable.redrawTable()
                 self.extender.highlightTab()
@@ -595,7 +593,6 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                 self.extender = extender
 
             def actionPerformed(self, e):
-                print('UserCookiesActionListener.actionPerformed')
                 for messageInfo in messages:
                     cookieVal = ""
                     requestInfo = self.extender._helpers.analyzeRequest(messageInfo)
